@@ -1,5 +1,32 @@
 # Decisions
 
+## D07 — 실제 경로에서 측정한 구간 분석
+
+- Context: 사용자가 실제 실행의 손실/위험 구간과 실패 조건을 설명하는 사후 분석을 요청했습니다. 기존 캠페인과 순수 Boids/미션 계산은 유지합니다.
+- Options: 임의 점수/인과 추정; 모든 개체 좌표와 조작 녹화; 고정 틱별 집결 측정을 최대 1초 구간으로 집계.
+- Decision: 각 틱의 도착·결속·정렬 부족, 위험 노출 비율의 적분, 연속 유지가 끊긴 횟수, 현재 목표 중심까지 평균 토러스 거리를 집계합니다. 집결지 전환 시 구간을 나누고 종료 틱도 포함합니다. 조건 미달 합·노출·유지 끊김 상위 구간과 실제 종료 조건을 표시합니다. 미달 시간은 서로 겹치며 원인을 단정하지 않습니다. 개체 소멸이 없으므로 손실 개체 수를 표시하지 않습니다.
+- Rationale: 위험·목표 거리·미달 조건을 같은 실제 이동에서 확인하며, 전체 경로 녹화 없이 분석과 비교가 가능합니다.
+- Affected: dist/src/analysis.js, dist/src/missions.js, dist/src/app.js, dist/index.html, dist/styles.css, test/analysis.test.js, architecture.md.
+- Review: 최대 78구간, 표시 단위는 시뮬레이션 초/모델 px/무리·초입니다. 순수 측정 시험과 실제 이동 성공·실패 시험을 구분합니다. 브라우저 E2E는 메인 담당입니다. 모든 시드의 성공이나 인과적 최적 설정을 보증하지 않습니다.
+
+## D08 — 제한된 기기 기록과 시작 설정 재도전
+
+- Context: 사용자가 제한된 로컬 설정·최근 요약 저장을 명시적으로 승인했습니다. D02/D05의 저장 금지 중 이 범위만 이번 요청으로 변경합니다.
+- Options: 저장 없음; 좌표/시드/조작 전체 저장 및 자동 재생; 규칙·잔상 설정, 최근 종료 결과 5개, 독립 완료 임무 3개만 기기 저장.
+- Decision: `swarm-garden-record-v1`을 8,192자 상한과 엄격한 구조/수치 검증으로 관리합니다. 설정을 바꾸거나 실행을 마칠 때 저장하고, 초기 열기/힌트/예시/임무 선택에는 저장하지 않습니다. 최근 결과는 임무·성공 여부·시간·확보 수·유도 시간·위험·미달 시간·유지 끊김만 보관합니다. 시드/좌표/경로/조작/개인정보/파일/날짜는 저장하지 않습니다. 실제 성공한 서로 다른 임무만 완료에 포함합니다. 명시적 기록 지우기는 실행을 정지·초기화하고 설정·기록·완료를 삭제합니다. 저장 불가/손상은 기본값과 페이지 메모리로 대응하며 실패를 표시합니다.
+- Rationale: 사용자가 설정과 최근 결과를 돌아볼 수 있고 제한된 비개인 요약만 남습니다. 저장된 활성 실행이나 자동 재생을 추가하지 않습니다.
+- Affected: dist/src/storage.js, dist/src/app.js, dist/index.html, test/storage.test.js, README.md, architecture.md.
+- Review: 로컬 데이터는 기기 소유자가 편집 가능하며 공인 기록/순위가 아닙니다. 직전 종료 실행의 임무·시드·실제 첫 틱 설정은 페이지 메모리로만 유지합니다. 같은 시드 재도전은 현재 규칙을 유지하고 시작 설정 재도전은 과거 시작 규칙을 복원합니다. 전체 조작 재생 기능은 아니며 중간 규칙 변경 횟수와 비교 제한을 표시합니다. 새로고침하면 비교 기준은 사라집니다.
+
+## D09 — 최소 갤러리 완료 요약
+
+- Context: 사용자가 15개 앱에 공통 `web-lab-progress-v1` 완료 배지 계약을 승인했습니다. 갤러리와 다른 저장소는 메인 작업의 책임입니다.
+- Options: 방문 수/임의 완료 수; 개인 실행 payload 공유; 검증된 저장 경계에서 자기 앱 완료 수만 공유.
+- Decision: whitelist 15 IDs, 최대 15 records, 정수 `0..total<=1000`, canonical ISO UTC timestamp, 8,192자 상한의 `{version:1,apps:{[id]:{completed,total,updatedAt}}}`만 사용합니다. 개인 기록 저장 성공 후 실제 독립 완료 ID 수를 `swarm-garden` completed, total 3으로 기록합니다. 초기 보기/예시/힌트로 완료하지 않습니다. 다른 정상 앱 항목을 유지하고 손상된 공유 값은 덮어쓰지 않습니다. clear는 자기 항목만 삭제합니다. 타임스탬프는 실제 저장 갱신 시각이지 미션 완료 날짜가 아닙니다.
+- Rationale: 동일 출처 갤러리가 개인 실행 데이터 접근 없이 완료 개수만 읽습니다. 서버·계정·순위·네트워크를 추가하지 않습니다.
+- Affected: dist/src/progress.js, dist/src/storage.js, test/storage.test.js, architecture.md, README.md.
+- Review: 동기 read-modify-write는 다른 탭과 원자적이지 않습니다. private 저장 성공과 aggregate 갱신 실패를 구분합니다. main이 각 앱 helper/15 IDs와 실제 gallery 읽기를 검증합니다. 공유 값이 손상되었으면 타 앱 데이터 보호를 위해 자기 clear도 실패할 수 있으며 UI에 표시합니다.
+
 ## D01 — Static, independent implementation
 
 - Context: the user approved implementing all six proposed services and adding them to WEB LAB.

@@ -1,11 +1,12 @@
 import {createWorld,step,metrics,torusDistance,WIDTH,HEIGHT} from "./model.js";
 import {rng} from "./ui.js";
+import {createAnalysis,measureAnalysis,finishAnalysis} from "./analysis.js";
 
 // Simulation seconds, never wall-clock time. Definitions are bounded and immutable.
 export const missionTypes=Object.freeze({
-  funnel:Object.freeze({name:"01 · 바늘문 항해",description:"바위 사이를 지나 세 집결지를 차례로 확보하세요. 분리가 너무 크면 무리가 퍼지고, 응집이 너무 크면 바위 앞에서 얽힙니다.",lesson:"정렬로 이동 방향을 만들고 응집으로 뒤처진 개체를 회수하세요. 바위 옆 중간 유도점이 직선 경로보다 유리할 수 있습니다.",time:65,budget:24,damage:7,occupancy:.75,coherence:.85,order:.55,hold:1.5,radius:95}),
-  crosswind:Object.freeze({name:"02 · 횡풍 릴레이",description:"위아래로 꺾이는 경로에 횡풍이 불어옵니다. 8초마다 흐름 방향이 바뀌므로 화살표와 실제 속도를 보고 유도점을 옮기세요.",lesson:"강한 정렬은 직선 이동에 유리하지만 급회전을 늦춥니다. 유도를 잠시 끄고 관성을 이용하면 유도 시간을 아낄 수 있습니다.",time:75,budget:24,damage:7,occupancy:.75,coherence:.85,order:.5,hold:1.5,radius:95}),
-  refuge:Object.freeze({name:"03 · 위험권 구조",description:"위험권을 돌아 세 대피지를 확보하세요. 위험권 안의 개체 비율이 시간에 누적됩니다. 화면 가장자리도 이어져 있으니 우회 경로를 설계하세요.",lesson:"피하기 유도는 위험권에서 벗어날 때 유용하지만 무리를 흩뜨립니다. 짧게 사용하고 다시 모으는 균형을 찾아보세요.",time:75,budget:24,damage:.65,occupancy:.75,coherence:.85,order:.5,hold:1.5,radius:95})
+  funnel:Object.freeze({name:"01 · 바늘문 항해",description:"두 바위 통로와 세 집결지.",time:65,budget:24,damage:7,occupancy:.75,coherence:.85,order:.55,hold:1.5,radius:95}),
+  crosswind:Object.freeze({name:"02 · 횡풍 릴레이",description:"꺾이는 경로 · 횡풍 방향은 8초마다 전환.",time:75,budget:24,damage:7,occupancy:.75,coherence:.85,order:.5,hold:1.5,radius:95}),
+  refuge:Object.freeze({name:"03 · 위험권 구조",description:"두 위험권을 돌아 세 대피지로 이동.",time:75,budget:24,damage:.65,occupancy:.75,coherence:.85,order:.5,hold:1.5,radius:95})
 });
 export function createMission(type="funnel",seed=21){
   if(!Object.hasOwn(missionTypes,type))throw new RangeError("Unknown mission");
@@ -26,7 +27,7 @@ export function createMission(type="funnel",seed=21){
     hazards=[{x:440,y:300+shift,r:115},{x:710,y:465-shift,r:85}];
     world.obstacles=[{x:590,y:300,r:42}];
   }
-  return {type,seed,world,gates:gates.map(g=>({...g,r:missionTypes[type].radius})),hazards,wind,stage:0,ticks:0,status:"ready",beacon:null,spent:0,damage:0,hold:0,completed:[],report:null};
+  return {type,seed,world,gates:gates.map(g=>({...g,r:missionTypes[type].radius})),hazards,wind,stage:0,ticks:0,status:"ready",beacon:null,spent:0,damage:0,hold:0,completed:[],analysis:createAnalysis(),report:null};
 }
 export function missionEnvironment(mission){return {...mission.wind,windY:mission.type==="crosswind"?28*(Math.floor(mission.ticks/480)%2?-1:1):mission.wind.windY,hazards:mission.hazards};}
 export function setBeacon(mission,x,y,mode="guide"){
@@ -57,7 +58,10 @@ export function stepMission(mission,rules){
   if(mission.spent>=spec.budget)mission.beacon=null;
   const m=objectiveMetrics(mission);mission.damage+=m.exposure*dt;
   const qualified=m.occupancy>=spec.occupancy&&m.coherence>=spec.coherence&&m.order>=spec.order;
+  const gate=mission.gates[mission.stage],distance=mission.world.boids.reduce((sum,b)=>sum+torusDistance(b,gate),0)/mission.world.boids.length;
+  measureAnalysis(mission.analysis,{tick:mission.ticks,stage:mission.stage,metrics:m,spec,distance,reset:!qualified&&mission.hold>0});
   mission.hold=qualified?mission.hold+dt:0;
+  const measuredHold=mission.hold;
   // Hard limits take precedence over a gate completed on that same tick.
   if(mission.damage>=spec.damage||mission.ticks>=spec.time*60){
     mission.status="failure";
@@ -66,5 +70,6 @@ export function stepMission(mission,rules){
     mission.completed.push({time:mission.ticks/60,...m});mission.stage++;mission.hold=0;
     if(mission.stage===mission.gates.length){mission.status="success";mission.report={reason:"모든 집결지 확보",time:mission.ticks/60,stages:mission.stage,spent:mission.spent,damage:mission.damage};}
   }
+  if(mission.report)mission.report.analysis=finishAnalysis(mission.analysis,m,spec,measuredHold);
   return mission.report;
 }

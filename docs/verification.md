@@ -6,6 +6,28 @@ swarm-garden: model source and focused tests, static asset/syntax checks, browse
 
 ## Evidence
 
+### 사후 분석·기기 기록·문구 정리 — LOCAL / 2026-10-09
+
+- Scope: swarm-garden만 수정. 시작 시 git status는 clean. 추가 에이전트, 커밋, 푸시, 계정 접근, provisioning, 원격 쓰기, 공개 순위 없음. 기존 세 캠페인과 성공 조건·환경·물리·예산·종료 우선순위는 유지했습니다. 기존 test/model.test.js와 test/missions.test.js, tools/check.mjs의 개인정보/CSP 검사는 변경하지 않았습니다.
+- SOURCE VERIFIED: architecture.md > README.md 및 docs/decisions.md 전체, docs/verification.md, .gitattributes, package.json, dist/index.html, dist/styles.css, dist/src/{model,missions,app,ui}.js 전체, 두 기존 테스트 전체, tools/{check,serve}.mjs, .gitignore, .github/workflows/pages.yml. 새 analysis/storage/progress 및 테스트는 작성 후 검토했습니다. 제공받은 AGENTS 지침도 적용했습니다.
+- SOURCE PARTIAL: 명시된 swarm-garden 디렉터리를 hidden 파일까지 inventory 후 작업 관련 전체 소스를 읽었습니다. .git의 객체/이력은 전체 읽지 않았습니다. 다른 앱은 부모 디렉터리 이름 15개 whitelist 확인만 했으며 파일 내용은 열거나 수정하지 않았습니다. inventory를 파일 전체 검토로 표현하지 않습니다.
+- SOURCE NOT_INSPECTED (absent): api-spec.md, requirements.md, 저장소/직접 부모의 AGENTS.md 파일은 없었습니다. 제공된 지침과 architecture.md가 우선합니다. 메모리 registry 검색에는 관련 항목이 없어 사용하지 않았습니다.
+- LOCAL MODEL: npm test 36/36 PASS (기존 25 + 신규 11). 기존 15개 실제 성공 경로(3임무 × 시드 21/22/35/123/9876), 기본/흩어짐의 실패, 정확 재현, 경계·제한·입력 거절은 그대로 통과합니다. 신규 시험은 실제 실패 경로의 모든 틱을 독립 집계하여 조건 미달·노출 합·유지 끊김·종료 측정을 대조합니다. 실제 첫 1초 경로 평균 토러스 거리도 독립 계산과 대조합니다. 구간 분할/종료 틱/겹치는 미달 시간, 실제 성공의 마지막 유지, 동일 임무·시드 비교 제한을 확인합니다. 분석 구간은 원시 좌표를 담지 않습니다.
+- LOCAL STORAGE (in-memory test double): 실제 모델 성공으로 독립 완료 3개를 생성하고 같은 임무 재성공/실패/미완료의 중복 집계 방지, 최근 5개 한도, 저장·읽기 왕복을 확인합니다. 8,192자 초과/손상/추가 필드/미등록 ID/잘못된 시드 필드/불가능한 시간·단계·예산·미달·완료 값 거절을 검사합니다. 15개 allowlist, integer 범위, ISO timestamp, own clear의 다른 앱 및 unrelated key 보존, 빈 저장소 clear의 새 공유 키 생성 방지, 저장 거절/갤러리 실패 분리를 확인합니다. 브라우저 localStorage 실행 증거는 아닙니다.
+- LOCAL STATIC: npm run check PASS — 공개 파일 9개, JS syntax / HTML 자산 참조 / 메타데이터 / 기존 CSP connect-src 'none' / BOM 검사. 최종 git diff --check, 엄격한 UTF-8/BOM/CRLF 및 HTML ID 참조/ES module local import 검사도 통과했습니다. 이는 브라우저 실행 증거가 아닙니다.
+- Changed paths: architecture.md, README.md, docs/decisions.md, docs/verification.md, dist/index.html, dist/styles.css, dist/src/app.js, dist/src/missions.js; added dist/src/analysis.js, dist/src/storage.js, dist/src/progress.js, test/analysis.test.js, test/storage.test.js. dist/src/model.js와 dist/src/ui.js는 변경하지 않았습니다.
+- BROWSER / RESPONSIVE / TOUCH / WebMCP / screenshots: NOT_RUN, 메인 담당. HTTP preview도 이번에는 시작하지 않았습니다. Remote CI / LIVE: NOT_RUN. 아래 수치는 Node 순수 모델의 즉시 목표 전환 경로이며 실제 UI 타이밍 성공을 주장하지 않습니다.
+
+#### 실제 화면 캡처·상호작용 인계
+
+1. 저장소에서 `npm run dev -- 0` 후 출력된 127.0.0.1 URL을 여세요. 깨끗한 테스트 브라우저로 준비 상태/시드 21/60개체를 확인하세요. 처음 열거나 임무만 바꿔도 localStorage에 기록을 생성하지 않아야 합니다. 설정 변경 후에만 개인 키와 완료 0/3 요약이 저장될 수 있습니다.
+2. **위험 실패 분석 캡처**: `03 구조` → `물결` → 시드 21 적용 → 캔버스 모델 좌표 (310,138)에 모으기 유도점 배치 → 시작. 같은 첫 유도점을 유지하며 끝까지 기다리세요. Node 경로는 17.0167 시뮬레이션 초(0.6배속 약 28.4초+프레임 지연)에 위험 0.650278로 실패하며 0/3입니다. 미달 도착 12.8667초·정렬 2.2667초, 유지 끊김 8회, 최대 노출 구간 2–3초/1번/0.128056 무리·초/평균 목표 거리 80.51px가 기준입니다. 종료된 실제 화면의 `항해 결과`와 위험·미달 구간을 캡처하세요. 모델 상태/보고서/좌표를 주입하지 마세요.
+3. **같은 시드 설정 비교 캡처**: 실패 후 `같은 시드 재도전` → 분리 0.2, 정렬 1.5, 응집 2.0, 시야 120 → (310,138)에 유도점 → 시작. 집결 1 확보를 보자마자 일시정지하고 (570,157)로 옮긴 뒤 재생, 집결 2 확보 시 일시정지/(780,313)/재생합니다. 실제 UI 반응이 달라질 수 있습니다. Node 즉시 전환 참조 성공은 10.3833초/3집결/위험 0입니다. 마지막 화면에 `직전 동일 임무·시드 대비` 원시 차이와 실제 시작 설정이 있어야 합니다. 비교가 있다고 시간 단축 원인을 설정만으로 단정하지 않아야 합니다.
+4. **시작 설정 재도전/독립 완료**: 종료 뒤 규칙을 다른 값으로 바꾼 후 `직전 시작 설정·시드로 재도전`을 누르면 방금 실행의 시작 규칙/구조/시드 21과 초기 예산이 복구되고 정지 상태입니다. 이것은 조작 자동 재생이 아닙니다. 다시 성공해도 completed는 1/3입니다. 새 시드나 다른 임무로 끝내면 동일 조건 비교가 없어야 합니다.
+5. **다른 성공 참조 경로**: 위 tight 규칙으로 바늘문 (340,293) → (550,307) → (770,293), 횡풍 (335,173) → (550,417) → (780,213). 각 확보 뒤 다음 목표에 배치하세요. Node 즉시 전환 참조는 각각 9.6833초/17.3667초 성공입니다. 다섯 시드 성공 모델 시험과 브라우저 조작 성공을 구분하세요.
+6. **저장/삭제**: 새로고침하면 규칙·잔상·최근 5개·완료 ID만 복구되고 활성 실행/분석/직전 비교/시드 경로는 복구하지 않습니다(시드 21 준비). private JSON에 seed/boids/beacon/intervals/actions/path/개인정보가 없어야 합니다. same-origin `web-lab-progress-v1`은 swarm-garden의 실제 unique completion 수/total 3/실제 ISO 갱신 시각만 가져야 합니다. `설정·결과·완료 기록 지우기`는 개인 키와 apps['swarm-garden']만 제거하고 다른 앱 기록을 유지하며 즉시 새 키를 만들지 않아야 합니다. 삭제 후 새 완료를 만든 때만 다시 집계하세요.
+7. **실패 경계·접근성**: 깨끗한 별도 테스트 프로필에서 저장 거절/손상 공유 요약으로도 실행과 종료 분석이 동작하며 저장/갤러리 실패를 표시하는지 확인하세요. 실제 사용자 데이터에 fixture를 덮어쓰지 마세요. 1440px, 390×844, 320×780에서 결과 표의 내부 스크롤, 페이지 가로 넘침, 키보드/터치·숨긴 페이지 정지·동작 줄이기·콘솔을 확인하세요. 네트워크/API/랭킹 추가는 없습니다. WebMCP가 지원되면 read_swarm_state의 report.analysis와 기존 입력 거절도 확인하세요.
+
 ### 미션 업그레이드 — 로컬 검토용 / 2026-10-09
 
 - Scope: 이 저장소만 수정했습니다. 커밋·푸시·배포·원격 쓰기는 하지 않았고 추가 에이전트를 만들지 않았습니다. 이전 브라우저 기록은 아래 최초 버전의 역사이며 이번 변경의 증거로 재사용하지 않습니다.
