@@ -1,5 +1,15 @@
 # Decisions
 
+## D10 — 자유 모델의 시드 검증과 규칙 비교 / 2026-10-13
+
+- Context: 미션/UI는 시드를 제한하지만 자유 모델 createWorld는 잘못된 시드를 uint32로 조용히 바꿔 표시 시드와 초기 조건이 불일치했습니다. 예: 0/NaN은 내부 seed 1로 실행했습니다.
+- Options: 변환된 시드로 표시만 변경; 잘못된 입력을 거절; 새로운 난수 생성기 도입.
+- Decision: createWorld도 미션과 같은 정수 1–4294967295를 요구합니다. 기존 유효한 시드의 난수와 궤적은 보존합니다. 0/음수/소수/NaN/Infinity/범위 초과/문자열/null 및 최대 유효 시드 회귀를 추가하고 수정 전 실패를 확인했습니다.
+- Rationale: 실험 조건의 동일성은 실제로 사용한 시드와 표시 값이 일치해야 합니다. 새로운 난수·저장 정책은 필요하지 않습니다.
+- Affected: dist/src/model.js, test/model.test.js, dist/index.html, tools/browser-audit-20261013.js, docs/verification.md.
+- Review: UI의 범위는 원래 같으므로 정상 사용자의 기록·미션 시드·목표·물리는 바뀌지 않습니다. 고정 시드는 중간 규칙과 유도 경로까지 재현한다는 뜻이 아닙니다.
+- Learning/provenance: 정렬만 바꾸는 같은 시드 재도전과 도착/정렬/유지 끊김 비교 절차를 추가합니다. [Craig Reynolds 원문](https://www.red3d.com/cwr/boids/)의 이웃 분리/방향 정렬/중심 응집을 2026-10-13 확인했고 앱의 목적 판정은 missions.js의 기존 계산에 근거합니다. 특정 규칙의 우월성은 주장하지 않습니다.
+
 ## D07 — 실제 경로에서 측정한 구간 분석
 
 - Context: 사용자가 실제 실행의 손실/위험 구간과 실패 조건을 설명하는 사후 분석을 요청했습니다. 기존 캠페인과 순수 Boids/미션 계산은 유지합니다.

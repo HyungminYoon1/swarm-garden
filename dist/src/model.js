@@ -2,7 +2,7 @@ import {rng,clamp} from "./ui.js";
 export const WIDTH=960,HEIGHT=600;
 export const presets=Object.freeze({school:{separation:1.5,alignment:1.1,cohesion:.8,vision:75},flock:{separation:1.1,alignment:2.5,cohesion:.5,vision:100},scatter:{separation:2.8,alignment:.1,cohesion:.05,vision:45}});
 export function validate(p){for(const key of ["separation","alignment","cohesion"])if(!Number.isFinite(p[key])||p[key]<0||p[key]>3)throw new RangeError("Invalid rule");if(!Number.isFinite(p.vision)||p.vision<30||p.vision>130)throw new RangeError("Invalid vision");}
-export function createWorld(count=160,seed=1){if(!Number.isInteger(count)||count<40||count>280)throw new RangeError("Invalid flock size");const random=rng(seed);return {seed,boids:Array.from({length:count},()=>{const a=random()*Math.PI*2;return {x:random()*WIDTH,y:random()*HEIGHT,vx:Math.cos(a)*70,vy:Math.sin(a)*70};}),obstacles:[],time:0};}
+export function createWorld(count=160,seed=1){if(!Number.isInteger(count)||count<40||count>280)throw new RangeError("Invalid flock size");if(!Number.isInteger(seed)||seed<1||seed>4294967295)throw new RangeError("Invalid seed");const random=rng(seed);return {seed,boids:Array.from({length:count},()=>{const a=random()*Math.PI*2;return {x:random()*WIDTH,y:random()*HEIGHT,vx:Math.cos(a)*70,vy:Math.sin(a)*70};}),obstacles:[],time:0};}
 const delta=(n,size)=>n>size/2?n-size:n<-size/2?n+size:n;
 export function torusDistance(a,b){return Math.hypot(delta(a.x-b.x,WIDTH),delta(a.y-b.y,HEIGHT));}
 const limit=(x,y,max)=>{const n=Math.hypot(x,y);return n>max?[x*max/n,y*max/n]:[x,y];};

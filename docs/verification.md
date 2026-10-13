@@ -1,5 +1,15 @@
 # Verification
 
+## 2026-10-13 시드 검증·정렬 비교 — LOCAL / BROWSER_LOCAL
+
+- Bug: createWorld의 잘못된 시드는0/NaN→1 등으로 변환돼 표시 조건과 난수가 불일치했습니다. 추가 model regression을 수정 전 Missing expected exception으로 실패시킨 뒤 미션과 같은1–uint32최대 정수 검증을 적용했습니다. 기존 UI는 원래 해당 범위를 검증하므로 모델 경계 보강이며 기존 유효시드 결과는 동일합니다.
+- Content/UI YES: 도착과 방향 정렬의 차이, 같은 시드에서 정렬만1.1→2.5로 바꾸고 유도/시간/미달/유지 끊김을 비교하는 절차. Files: dist/src/model.js, test/model.test.js, dist/index.html, tools/browser-audit-20261013.js, docs/decisions.md, 이 문서. 화면 확인에서 안내의 기존3열 미션 class를 단일열 analysis-panel로 조정했습니다.
+- Sources: 지정 디렉터리 inventory PARTIAL. architecture.md/README.md/decisions, index/app/model/missions/analysis/ui, styles, model/missions tests 및 check/serve 전문 VERIFIED. 남은 저장·과거 QA·테스트는 관련 부분 선택 및 전체 검사 실행; Git 내부/이력 전체 검토 제외. api-spec.md/requirements.md/저장소 AGENTS 없음; 전달 지침 적용.
+- Node v22.23.2/npm11.12.0: `npm test` **37/37 PASS**, `npm run check` PASS (9public files). 기존3미션×5대표시드 실제 이동 성공, 기본/흩어짐 실패, 정확재현·유도만료·종료우선순위·독립구간분석·저장검증 유지. 신규 검증은 invalid seed8종 및최대유효시드의 동일/다른 초기조건을 확인합니다.
+- Browser: isolated muted headless Chromium / main loopback /swarm-garden/, audit **12 assertions PASS**. 시드0 거절/현재21보존, 구조 실제 이동에서 위험 한도 실패, 종료 재생잠김, 같은 시드 재도전의24초예산/75초시간 복원, 자유실험 Enter 장애물13번째 거절과12개유지. 최종 캡처는23.3초/위험0.65무리·초/1집결 실패입니다. CSS 정수 clientWidth 대신 실제 bounding rect로 좌표를 환산하고 브라우저 pointer를 측정했습니다: (309.9999912337298,138.00001051952424). pageerror0. 초기 정수 CSS 좌표 방식의17.0초/0집결과 같은 실행이라고 주장하지 않습니다. 모델의 정확 동일 입력 재현은 Node 증거이며 브라우저의 근사 좌표/조작 비교와 구별합니다.
+- Screenshots: 부모 `output/qa-20261013/swarm-garden/{desktop,mobile-390,mobile-320}.png`. 실제위험실패/구간분석/새정렬비교 안내 펼침. selectors #rule-experiment, #analysis-result, #analysis-intervals, #seed-input, #retake. 1440×1000/390×844/320×844 문서 가로 넘침 없음.
+- Limits: 브라우저에서 이번 검증은 대표 실패/재시작/입력 경로입니다. 세미션 성공경로 전체는 Node모델 증거이며 이번 실제 UI 성공을 대신하지 않습니다. 다른브라우저·물리터치·스크린리더·지원WebMCP runtime NOT_RUN. provenance는 D10의 Reynolds원문과 실제모델. 기록/물리/목표/데이터경계·runtime 의존성은 유지합니다. REMOTE_CI/LIVE·갤러리통합은 메인담당; commit/push/deploy 없음.
+
 ## Scope
 
 swarm-garden: model source and focused tests, static asset/syntax checks, browser interaction, remote workflow and public site are separate evidence levels. Existing unrelated services remain outside this change.
