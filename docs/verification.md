@@ -1,5 +1,7 @@
 # Verification
 
+[2026-10-13 systematic edge cases — new executable tests, red/green evidence, browser scope](edge-cases-20261013.md)
+
 ## 2026-10-13 시드 검증·정렬 비교 — LOCAL / BROWSER_LOCAL
 
 - Bug: createWorld의 잘못된 시드는0/NaN→1 등으로 변환돼 표시 조건과 난수가 불일치했습니다. 추가 model regression을 수정 전 Missing expected exception으로 실패시킨 뒤 미션과 같은1–uint32최대 정수 검증을 적용했습니다. 기존 UI는 원래 해당 범위를 검증하므로 모델 경계 보강이며 기존 유효시드 결과는 동일합니다.

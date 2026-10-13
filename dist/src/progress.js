@@ -9,7 +9,7 @@ function entry(value){
 }
 export function readProgress(storage){
   try{
-    const raw=storage.getItem(PROGRESS_KEY);if(!raw)return {version:1,apps:{}};
+    const raw=storage.getItem(PROGRESS_KEY);if(raw===null)return {version:1,apps:{}};
     if(raw.length>8192)return null;
     const data=JSON.parse(raw);if(!plain(data)||Object.keys(data).length!==2||data.version!==1||!plain(data.apps)||Object.keys(data.apps).length>15)return null;
     const apps={};for(const id of Object.keys(data.apps)){if(!APP_IDS.includes(id))return null;const record=entry(data.apps[id]);if(!record)return null;apps[id]=record;}
@@ -19,10 +19,10 @@ export function readProgress(storage){
 export function writeProgress(storage,id,completed,total,updatedAt){
   const record=entry({completed,total,updatedAt});if(!APP_IDS.includes(id)||!record)return false;
   const data=readProgress(storage);if(!data)return false;
-  data.apps[id]=record;try{storage.setItem(PROGRESS_KEY,JSON.stringify(data));return true;}catch{return false;}
+  data.apps[id]=record;try{const raw=JSON.stringify(data);storage.setItem(PROGRESS_KEY,raw);return storage.getItem(PROGRESS_KEY)===raw;}catch{return false;}
 }
 export function clearProgress(storage,id){
   if(!APP_IDS.includes(id))return false;const data=readProgress(storage);if(!data)return false;
   if(!Object.hasOwn(data.apps,id))return true;
-  delete data.apps[id];try{storage.setItem(PROGRESS_KEY,JSON.stringify(data));return true;}catch{return false;}
+  delete data.apps[id];try{const raw=JSON.stringify(data);storage.setItem(PROGRESS_KEY,raw);return storage.getItem(PROGRESS_KEY)===raw;}catch{return false;}
 }

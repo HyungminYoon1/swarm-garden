@@ -38,12 +38,13 @@ export function recordResult(record,mission){
 }
 export function saveRecord(storage,record,now){
   try{
-    const data=validateRecord(record);storage.setItem(RECORD_KEY,JSON.stringify(data));
+    const data=validateRecord(record),raw=JSON.stringify(data);storage.setItem(RECORD_KEY,raw);
+    if(storage.getItem(RECORD_KEY)!==raw)return {saved:false,progress:false};
     const progress=writeProgress(storage,"swarm-garden",data.achievements.length,ids.length,now);
     return {saved:true,progress};
   }catch{return {saved:false,progress:false};}
 }
 export function clearRecord(storage){
-  try{storage.removeItem(RECORD_KEY);return {cleared:true,progress:clearProgress(storage,"swarm-garden")};}
+  try{storage.removeItem(RECORD_KEY);if(storage.getItem(RECORD_KEY)!==null)return {cleared:false,progress:false};return {cleared:true,progress:clearProgress(storage,"swarm-garden")};}
   catch{return {cleared:false,progress:false};}
 }

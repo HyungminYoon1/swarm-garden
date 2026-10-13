@@ -1,5 +1,14 @@
 # Decisions
 
+## D11 — Confirm storage effects and preserve empty corrupt aggregates / 2026-10-13
+
+- Context: systematic edge-test expansion is explicitly authorized for this owned app; parent handles release. New executable tests reproduced 4 Node boundary failures.
+- Options: trust return without observing effects / ignore absent samples; redesign storage or scientific model; validate the existing boundary and retain original contracts.
+- Decision: E01/E02 private no-op writes/deletes reported success and could publish/remove summary; E03 empty-string aggregate was treated as absent and overwritten; E04 aggregate no-op set/clear reported success. Each is now rejected or reported as unconfirmed.
+- Rationale: failure reporting and input rejection must match the actual bounded state. No new schema, retention, achievement rule, backend, physics, stimulus or architecture is introduced.
+- Affected files: dist/src/storage.js, dist/src/progress.js; test/edge-20261013.test.js; tools/browser-edge-20261013.mjs; docs/edge-cases-20261013.md; docs/verification.md; .gitignore (local evidence only).
+- Review: [matrix and exact commands](edge-cases-20261013.md). Storage readback is synchronous best effort, not atomic multi-tab isolation. Fixtures and local Chrome are distinguished from device/live evidence. Remote CI/live remain NOT_RUN; parent integrates/releases.
+
 ## D10 — 자유 모델의 시드 검증과 규칙 비교 / 2026-10-13
 
 - Context: 미션/UI는 시드를 제한하지만 자유 모델 createWorld는 잘못된 시드를 uint32로 조용히 바꿔 표시 시드와 초기 조건이 불일치했습니다. 예: 0/NaN은 내부 seed 1로 실행했습니다.
